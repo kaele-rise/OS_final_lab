@@ -1,0 +1,14 @@
+[Unit]
+Description={{ app_name }} Flask App
+After=network.target postgresql.service
+
+[Service]
+User=root
+WorkingDirectory=/opt/{{ app_name }}
+Environment="ENV={{ env }}"
+Environment="MOCK_URL={{ external_api_url | default('http://192.168.121.20:5001/mock') }}"
+ExecStart=/usr/bin/python3 /opt/{{ app_name }}/app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

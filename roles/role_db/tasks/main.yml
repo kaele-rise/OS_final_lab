@@ -1,0 +1,46 @@
+---
+- name: Install PostgreSQL
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - postgresql
+    - postgresql-contrib
+  tags:
+    - install
+    - db
+
+- name: Ensure PostgreSQL is running
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Create application database
+  block:
+    - name: Create DB
+      postgresql_db:
+        name: "{{ db_name }}"
+        encoding: UTF-8
+      become_user: postgres
+      notify: restart postgres
+
+    - name: Create DB user
+      postgresql_user:
+        db: "{{ db_name }}"
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        priv: ALL
+      become_user: postgres
+      no_log: true
+  rescue:
+    - name: Log error
+      debug:
+        msg: "Failed to configure database {{ db_name }}"
+  always:
+    - name: Ensure postgresql is started after attempt
+      service:
+        name: postgresql
+        state: started
+

@@ -1,0 +1,51 @@
+---
+- name: Deploy database
+  hosts: staging, production
+  gather_facts: yes
+  roles:
+    - role_db
+  tags:
+    - db
+    - install
+
+- name: Wait for database readiness
+  hosts: staging, production
+  tasks:
+    - name: Wait for PostgreSQL port
+      wait_for:
+        port: 5432
+        host: "{{ db_host }}"
+        timeout: 30
+      when: db_host != inventory_hostname
+
+- name: Get default IPv4 address and transform
+  hosts: staging, production
+  gather_facts: yes
+  tasks:
+    - name: Get default IPv4 address
+      set_fact:
+        app_ip: "{{ ansible_default_ipv4.address }}"
+      when: ansible_default_ipv4 is defined
+
+    - name: Transform IP with custom filter
+      set_fact:
+        masked_ip: "{{ app_ip | default('0.0.0.0') | replace('.', '-') }}"
+
+- name: Deploy web and app
+  hosts: staging, production
+  roles:
+    - role_web
+    - role_app
+  tags:
+    - web
+    - app
+    - install
+    - config
+
+- name: Run database migrations (example)
+  hosts: staging, production
+  tasks:
+    - name: Placeholder for migrations
+      debug:
+        msg: "Migrations would run here"
+      tags: migrate

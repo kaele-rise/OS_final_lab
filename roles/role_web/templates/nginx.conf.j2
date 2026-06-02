@@ -1,0 +1,22 @@
+server {
+    listen {{ nginx_port }} default_server;
+    server_name _;
+
+    {% if debug %}
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log debug;
+    {% else %}
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    {% endif %}
+
+    location / {
+        proxy_pass http://127.0.0.1:{{ app_port }};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    {% for domain in extra_domains %}
+    # additional server block for {{ domain }}
+    {% endfor %}
+}
