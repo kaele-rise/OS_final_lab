@@ -16,7 +16,21 @@ jobs:
           sudo apt update
           sudo apt install -y ansible
 
-      - name: Run playbook (dry-run)
+      - name: Create vault password file
+        run: echo "${{ secrets.VAULT_PASS }}" > vault_pass.txt
+
+      - name: Setup ansible.cfg
         run: |
-          ansible-playbook playbooks/site.yml --syntax-check
-          ansible-playbook playbooks/site.yml --list-tasks
+          echo '[defaults]' > ansible.cfg
+          echo 'roles_path = ./roles' >> ansible.cfg
+          echo 'vault_password_file = vault_pass.txt' >> ansible.cfg
+          echo 'host_key_checking = False' >> ansible.cfg
+
+      - name: Install collection
+        run: ansible-galaxy collection install community.postgresql
+
+      - name: Syntax check
+        run: ansible-playbook playbooks/site.yml --syntax-check
+
+      - name: List tasks
+        run: ansible-playbook playbooks/site.yml --list-tasks
